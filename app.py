@@ -15,272 +15,88 @@ st.set_page_config(
 )
 
 # ── Fonts + Global CSS ─────────────────────────────────────────────────────────
-st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
-  html, body, [class*="css"] {
-    font-family: 'Poppins', sans-serif;
-    background: #05080F;
-    color: #E2E8F0;
-  }
-  .stApp { background: #05080F; }
-  #MainMenu, footer, header { visibility: hidden; }
-  .block-container { padding-top: 1rem; padding-bottom: 2rem; }
-
-  /* Tabs */
-  .stTabs [data-baseweb="tab-list"] {
-    gap: 4px;
-    background: rgba(99,102,241,0.06);
-    border-radius: 12px;
-    padding: 6px;
-    border: 1px solid rgba(99,102,241,0.18);
-  }
-  .stTabs [data-baseweb="tab"] {
-    background: transparent;
-    border-radius: 8px;
-    color: #94A3B8;
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 600;
-    font-size: 0.78rem;
-    letter-spacing: 0.08em;
-    padding: 8px 22px;
-    border: none;
-  }
-  .stTabs [aria-selected="true"] {
-    background: linear-gradient(135deg, #6366F1, #4F46E5) !important;
-    color: #fff !important;
-  }
-
-  /* Cards */
-  .glass-card {
-    background: rgba(99,102,241,0.05);
-    border: 1px solid rgba(99,102,241,0.2);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 16px;
-    backdrop-filter: blur(12px);
-  }
-  .pos-card {
-    background: rgba(16,185,129,0.06);
-    border: 1px solid rgba(16,185,129,0.25);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 16px;
-  }
-  .neg-card {
-    background: rgba(244,63,94,0.06);
-    border: 1px solid rgba(244,63,94,0.25);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 16px;
-  }
-  .neu-card {
-    background: rgba(245,158,11,0.06);
-    border: 1px solid rgba(245,158,11,0.25);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 16px;
-  }
-
-  /* Metric tiles */
-  .metric-tile {
-    background: rgba(99,102,241,0.08);
-    border: 1px solid rgba(99,102,241,0.25);
-    border-radius: 14px;
-    padding: 20px;
-    text-align: center;
-  }
-  .metric-val {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 2rem;
-    font-weight: 900;
-    background: linear-gradient(135deg, #6366F1, #10B981);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  .metric-lbl {
-    font-size: 0.7rem;
-    color: #64748B;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    font-family: 'Montserrat', sans-serif;
-    margin-top: 4px;
-  }
-
-  /* Sentiment badge */
-  .sent-badge {
-    display: inline-block;
-    padding: 6px 18px;
-    border-radius: 30px;
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 700;
-    font-size: 0.82rem;
-    letter-spacing: 0.14em;
-  }
-
-  /* Input */
-  .stTextArea textarea {
-    background: rgba(99,102,241,0.06) !important;
-    border: 1px solid rgba(99,102,241,0.25) !important;
-    border-radius: 10px !important;
-    color: #E2E8F0 !important;
-    font-family: 'Poppins', sans-serif !important;
-    font-size: 0.88rem !important;
-  }
-  label, .stSelectbox label {
-    font-family: 'Montserrat', sans-serif !important;
-    font-size: 0.75rem !important;
-    letter-spacing: 0.08em !important;
-    color: #94A3B8 !important;
-    text-transform: uppercase !important;
-  }
-
-  /* Buttons */
-  .stButton > button {
-    background: linear-gradient(135deg, #6366F1, #4F46E5);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    padding: 12px 32px;
-    font-size: 0.85rem;
-    width: 100%;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .stButton > button:hover {
-    background: linear-gradient(135deg, #4F46E5, #4338CA);
-    transform: translateY(-1px);
-    box-shadow: 0 8px 24px rgba(99,102,241,0.4);
-  }
-
-  /* Watermarks */
-  .brand-watermark {
-    position: fixed; top: 14px; right: 18px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 0.62rem; letter-spacing: 0.18em;
-    color: rgba(99,102,241,0.28); z-index: 999;
-    pointer-events: none;
-  }
-  .brand-watermark-left {
-    position: fixed; top: 14px; left: 18px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 0.62rem; letter-spacing: 0.18em;
-    color: rgba(99,102,241,0.28); z-index: 999;
-    pointer-events: none;
-  }
-
-  h1,h2,h3 { font-family: 'Montserrat', sans-serif !important; letter-spacing: 0.04em !important; }
-
-  .indigo-divider {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, #6366F1, transparent);
-    margin: 20px 0; border: none;
-  }
-
-  /* Scrollable review list */
-  .review-scroll {
-    max-height: 320px;
-    overflow-y: auto;
-    padding-right: 4px;
-  }
-  .review-item {
-    background: rgba(255,255,255,0.03);
-    border-left: 3px solid;
-    border-radius: 0 8px 8px 0;
-    padding: 10px 14px;
-    margin-bottom: 8px;
-    font-size: 0.82rem;
-    color: #CBD5E1;
-    line-height: 1.5;
-  }
-</style>
-""", unsafe_allow_html=True)
-
-# ── Three.js 3D sphere cluster background ─────────────────────────────────────
-st.markdown("""
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<canvas id="threeCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
+st.markdown('''<canvas id="bg3d" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;pointer-events:none;"></canvas>
 <script>
-(function(){
-  function init(){
-    if(typeof THREE==='undefined'){ setTimeout(init,120); return; }
-    const canvas=document.getElementById('threeCanvas');
-    if(!canvas) return;
+(function() {
+  const canvas = document.getElementById('bg3d');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
 
-    const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth,window.innerHeight);
-    renderer.setClearColor(0x000000,0);
-
-    const scene=new THREE.Scene();
-    const camera=new THREE.PerspectiveCamera(55,window.innerWidth/window.innerHeight,0.1,200);
-    camera.position.z=38;
-
-    const COLORS=[0x6366F1,0x10B981,0xF43F5E,0xF59E0B,0x818CF8,0x34D399,0x4F46E5];
-    const spheres=[];
-
-    for(let i=0;i<55;i++){
-      const r=Math.random()*1.0+0.2;
-      const geo=new THREE.SphereGeometry(r,12,12);
-      const isWire=Math.random()>0.35;
-      const mat=new THREE.MeshBasicMaterial({
-        color:COLORS[Math.floor(Math.random()*COLORS.length)],
-        wireframe:isWire,
-        transparent:true,
-        opacity:Math.random()*0.28+0.06
-      });
-      const mesh=new THREE.Mesh(geo,mat);
-      mesh.position.set(
-        (Math.random()-0.5)*65,
-        (Math.random()-0.5)*40,
-        (Math.random()-0.5)*30
-      );
-      mesh.userData={
-        vx:(Math.random()-0.5)*0.016,
-        vy:(Math.random()-0.5)*0.016,
-        rx:(Math.random()-0.5)*0.009,
-        ry:(Math.random()-0.5)*0.007
-      };
-      scene.add(mesh);
-      spheres.push(mesh);
-    }
-
-    let mx=0, my=0;
-    window.addEventListener('mousemove',e=>{
-      mx=(e.clientX/window.innerWidth -0.5)*2;
-      my=(e.clientY/window.innerHeight-0.5)*2;
+  const COLORS = ['#6366F1','#10B981','#F43F5E','#F59E0B','#8B5CF6','#06B6D4'];
+  const pts = [];
+  for (let i = 0; i < 110; i++) {
+    const theta = Math.random() * Math.PI * 2;
+    const phi   = Math.acos(2 * Math.random() - 1);
+    const rad   = 90 + Math.random() * 200;
+    pts.push({
+      ox: rad * Math.sin(phi) * Math.cos(theta),
+      oy: rad * Math.sin(phi) * Math.sin(theta),
+      oz: rad * Math.cos(phi),
+      r:  Math.random() * 2.0 + 0.5,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)]
     });
-    window.addEventListener('resize',()=>{
-      camera.aspect=window.innerWidth/window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth,window.innerHeight);
-    });
-
-    function animate(){
-      requestAnimationFrame(animate);
-      spheres.forEach(s=>{
-        s.rotation.x+=s.userData.rx;
-        s.rotation.y+=s.userData.ry;
-        s.position.x+=s.userData.vx;
-        s.position.y+=s.userData.vy;
-        if(Math.abs(s.position.x)>33) s.userData.vx*=-1;
-        if(Math.abs(s.position.y)>20) s.userData.vy*=-1;
-      });
-      // Parallax camera drift
-      camera.position.x+=(mx*5 - camera.position.x)*0.035;
-      camera.position.y+=(-my*3  - camera.position.y)*0.035;
-      camera.lookAt(0,0,0);
-      renderer.render(scene,camera);
-    }
-    animate();
   }
-  init();
+
+  let ang = 0;
+  function project(x, y, z) {
+    const fov = 360, sc = fov / (fov + z + 180);
+    return { sx: canvas.width/2 + x*sc, sy: canvas.height/2 + y*sc, sc };
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ang += 0.0022;
+    const cA = Math.cos(ang), sA = Math.sin(ang);
+    const cB = Math.cos(ang * 0.37), sB = Math.sin(ang * 0.37);
+
+    const projected = pts.map(p => {
+      const rx = p.ox*cA + p.oz*sA;
+      const ry_raw = -p.ox*sA + p.oz*cA;
+      const ry = p.oy*cB - ry_raw*sB;
+      const rz = p.oy*sB + ry_raw*cB;
+      const pr = project(rx, ry, rz);
+      return { ...pr, color: p.color, r: p.r, rz };
+    }).sort((a, b) => b.rz - a.rz);
+
+    // Orbit lines
+    for (let i = 0; i < projected.length; i++) {
+      for (let j = i+1; j < projected.length; j++) {
+        const dx = projected[i].sx - projected[j].sx;
+        const dy = projected[i].sy - projected[j].sy;
+        const d  = Math.sqrt(dx*dx + dy*dy);
+        if (d < 88) {
+          ctx.beginPath();
+          ctx.moveTo(projected[i].sx, projected[i].sy);
+          ctx.lineTo(projected[j].sx, projected[j].sy);
+          ctx.strokeStyle = 'rgba(99,102,241,' + (0.13*(1-d/88)).toFixed(3) + ')';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Depth-sorted glowing orbs
+    projected.forEach(p => {
+      const size  = Math.max(0.5, p.r * p.sc * 4);
+      const alpha = Math.min(0.9, Math.max(0.1, p.sc * 1.3));
+      const hex   = Math.round(alpha * 255).toString(16).padStart(2, '0');
+      const g = ctx.createRadialGradient(p.sx, p.sy, 0, p.sx, p.sy, size*4.5);
+      g.addColorStop(0, p.color + '55');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.beginPath(); ctx.arc(p.sx, p.sy, size*4.5, 0, Math.PI*2);
+      ctx.fillStyle = g; ctx.fill();
+      ctx.beginPath(); ctx.arc(p.sx, p.sy, size, 0, Math.PI*2);
+      ctx.fillStyle = p.color + hex; ctx.fill();
+    });
+
+    requestAnimationFrame(draw);
+  }
+  draw();
 })();
-</script>
-""", unsafe_allow_html=True)
+</script>''', unsafe_allow_html=True)
 
 # ── Top badge bar ─────────────────────────────────────────────────────────────
 st.markdown("""
@@ -559,7 +375,7 @@ with tab2:
                                 margin=dict(t=10,b=10,l=10,r=10), height=220,
                                 title=dict(text="SENTIMENT SPLIT",
                                            font=dict(family="Montserrat",size=12,color="#6366F1")))
-            st.plotly_chart(donut, use_container_width=True)
+            st.plotly_chart(donut, width='stretch')
 
             # Results table
             st.markdown('<div class="glass-card">', unsafe_allow_html=True)
@@ -569,12 +385,12 @@ with tab2:
             show_cols = ["Sentiment","Score","Confidence (%)","Positive (%)","Negative (%)","Subjectivity (%)", text_col_input]
             show_cols = [c for c in show_cols if c in result_df.columns]
             st.dataframe(result_df[show_cols].sort_values("Score", ascending=False),
-                         use_container_width=True, height=260)
+                         width='stretch', height=260)
 
             # Download
             csv_out = result_df.to_csv(index=False).encode("utf-8")
             st.download_button("⬇️  DOWNLOAD RESULTS CSV", csv_out,
-                               "sentiment_results.csv", "text/csv", use_container_width=True)
+                               "sentiment_results.csv", "text/csv", width='stretch')
             st.markdown("</div>", unsafe_allow_html=True)
 
         elif batch_df is not None:
@@ -649,7 +465,7 @@ with tab3:
                               xaxis=dict(gridcolor="rgba(0,0,0,0)"),
                               yaxis=dict(gridcolor="#1E293B"),
                               margin=dict(l=10,r=10,t=42,b=10), height=300)
-        st.plotly_chart(fig_cat, use_container_width=True)
+        st.plotly_chart(fig_cat, width='stretch')
 
     # Score distribution
     with ic2:
@@ -667,7 +483,7 @@ with tab3:
                                xaxis=dict(gridcolor="#1E293B",title="Compound Score"),
                                yaxis=dict(gridcolor="#1E293B",title="Count"),
                                margin=dict(l=10,r=10,t=42,b=10), height=300)
-        st.plotly_chart(fig_hist, use_container_width=True)
+        st.plotly_chart(fig_hist, width='stretch')
 
     ic3, ic4 = st.columns(2)
 
@@ -686,7 +502,7 @@ with tab3:
                                xaxis=dict(gridcolor="#1E293B"),
                                yaxis=dict(gridcolor="#1E293B"),
                                margin=dict(l=10,r=10,t=42,b=10), height=300)
-        st.plotly_chart(fig_scat, use_container_width=True)
+        st.plotly_chart(fig_scat, width='stretch')
 
     # Subjectivity vs confidence
     with ic4:
@@ -702,7 +518,7 @@ with tab3:
                               xaxis=dict(gridcolor="#1E293B"),
                               yaxis=dict(gridcolor="#1E293B"),
                               margin=dict(l=10,r=10,t=42,b=10), height=300)
-        st.plotly_chart(fig_sub, use_container_width=True)
+        st.plotly_chart(fig_sub, width='stretch')
 
     # Top words bar chart
     pos_texts = insights_df[insights_df["Sentiment"]=="POSITIVE"]["review_text"].tolist()
@@ -722,7 +538,7 @@ with tab3:
                              yaxis=dict(gridcolor="rgba(0,0,0,0)"),
                              xaxis=dict(gridcolor="#1E293B"),
                              margin=dict(l=10,r=10,t=42,b=10), height=320)
-        st.plotly_chart(fig_wp, use_container_width=True)
+        st.plotly_chart(fig_wp, width='stretch')
 
     with wc2:
         fig_wn = px.bar(wf_neg, x="Frequency", y="Word", orientation="h",
@@ -735,7 +551,7 @@ with tab3:
                              yaxis=dict(gridcolor="rgba(0,0,0,0)"),
                              xaxis=dict(gridcolor="#1E293B"),
                              margin=dict(l=10,r=10,t=42,b=10), height=320)
-        st.plotly_chart(fig_wn, use_container_width=True)
+        st.plotly_chart(fig_wn, width='stretch')
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 4 — ABOUT
