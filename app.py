@@ -25,8 +25,11 @@ html, body, [data-testid="stAppViewContainer"] {
     font-family: 'Poppins', sans-serif;
 }
 
+/* FIX 1: Give the main content layer a stacking context so it sits ABOVE the z-index:0 canvas */
 [data-testid="stAppViewContainer"] > .main {
     background: transparent;
+    position: relative;
+    z-index: 1;
 }
 
 .glass-card {
@@ -142,22 +145,22 @@ html, body, [data-testid="stAppViewContainer"] {
 </style>
 """, unsafe_allow_html=True)
 
-# ── FIX 1: Animated background injected via components.html so the script actually runs ──
-# Streamlit strips <script> from st.markdown; components.html() executes inside an iframe
-# that can reach window.parent.document to inject the canvas into the real page.
+# ── Animated background ────────────────────────────────────────────────────────
+# FIX 2: opacity:0.45 on the canvas keeps it subtle; z-index:0 keeps it behind
+# the app content (which now has z-index:1 via CSS above).
 components.html("""
 <script>
 (function () {
   const parentDoc = window.parent.document;
 
-  // Remove stale canvas from previous Streamlit hot-reloads
   const existing = parentDoc.getElementById('bg3d');
   if (existing) existing.remove();
 
   const canvas = parentDoc.createElement('canvas');
   canvas.id = 'bg3d';
+  /* opacity:0.45 = subtle background; z-index:0 = behind the z-index:1 app layer */
   canvas.style.cssText =
-    'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;pointer-events:none;';
+    'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;pointer-events:none;opacity:0.45;';
   parentDoc.body.appendChild(canvas);
 
   const ctx = canvas.getContext('2d');
@@ -304,36 +307,46 @@ components.html("""
 </script>
 """, height=0, scrolling=False)
 
-# ── FIX 2: Badge bar injected into parent DOM via components.html ──────────────
-# st.markdown with position:fixed gets clipped inside Streamlit's own container;
-# injecting directly into window.parent.document places it on the real viewport.
+# ── Social badge bar ───────────────────────────────────────────────────────────
+# FIX 3: setTimeout(300ms) waits for parent DOM to be ready before injecting.
+# setInterval(2000ms) re-injects every 2 s so badges survive Streamlit re-renders
+# that wipe externally injected DOM nodes. The guard `getElementById` prevents
+# duplicate injections on each interval tick.
 components.html("""
 <script>
 (function () {
-  const parentDoc = window.parent.document;
+  function injectBadges() {
+    const parentDoc = window.parent.document;
+    if (!parentDoc || !parentDoc.body) return;
 
-  const existing = parentDoc.getElementById('social-badges-bar');
-  if (existing) existing.remove();
+    /* Already injected — do nothing */
+    if (parentDoc.getElementById('social-badges-bar')) return;
 
-  const div = parentDoc.createElement('div');
-  div.id = 'social-badges-bar';
-  div.style.cssText =
-    'position:fixed;top:11px;left:16px;z-index:9999;display:flex;gap:7px;align-items:center;';
-  div.innerHTML = `
-    <a href="https://github.com/thesouravburman" target="_blank" style="text-decoration:none;">
-      <img src="https://img.shields.io/badge/GitHub-thesouravburman-181717?style=flat-square&logo=github&logoColor=white"
-           style="height:21px;border-radius:4px;"/>
-    </a>
-    <a href="https://linkedin.com/in/souravburman" target="_blank" style="text-decoration:none;">
-      <img src="https://img.shields.io/badge/LinkedIn-Sourav%20Burman-0A66C2?style=flat-square&logo=linkedin&logoColor=white"
-           style="height:21px;border-radius:4px;"/>
-    </a>
-    <a href="mailto:thesouravburman@gmail.com" style="text-decoration:none;">
-      <img src="https://img.shields.io/badge/Email-Contact-EA4335?style=flat-square&logo=gmail&logoColor=white"
-           style="height:21px;border-radius:4px;"/>
-    </a>
-  `;
-  parentDoc.body.appendChild(div);
+    const div = parentDoc.createElement('div');
+    div.id = 'social-badges-bar';
+    div.style.cssText =
+      'position:fixed;top:11px;left:16px;z-index:9999;display:flex;gap:7px;align-items:center;';
+    div.innerHTML = `
+      <a href="https://github.com/thesouravburman" target="_blank" style="text-decoration:none;">
+        <img src="https://img.shields.io/badge/GitHub-thesouravburman-181717?style=flat-square&logo=github&logoColor=white"
+             style="height:21px;border-radius:4px;" />
+      </a>
+      <a href="https://linkedin.com/in/souravburman" target="_blank" style="text-decoration:none;">
+        <img src="https://img.shields.io/badge/LinkedIn-Sourav%20Burman-0A66C2?style=flat-square&logo=linkedin&logoColor=white"
+             style="height:21px;border-radius:4px;" />
+      </a>
+      <a href="mailto:thesouravburman@gmail.com" style="text-decoration:none;">
+        <img src="https://img.shields.io/badge/Email-Contact-EA4335?style=flat-square&logo=gmail&logoColor=white"
+             style="height:21px;border-radius:4px;" />
+      </a>
+    `;
+    parentDoc.body.appendChild(div);
+  }
+
+  /* First attempt after a short delay so parent DOM is ready */
+  setTimeout(injectBadges, 300);
+  /* Keep re-checking to survive Streamlit hot-reloads */
+  setInterval(injectBadges, 2000);
 })();
 </script>
 """, height=0, scrolling=False)
@@ -884,7 +897,6 @@ with tab4:
 
     with ab2:
         st.markdown('<div class="neu-card">', unsafe_allow_html=True)
-        # FIX 3: Social links now have proper <a href> tags so they are clickable
         st.markdown("""
         <div style="font-family:'Montserrat',sans-serif;font-size:0.68rem;
                     letter-spacing:0.2em;color:#F59E0B;margin-bottom:16px;">● BUILDER</div>
@@ -912,9 +924,6 @@ with tab4:
         """, unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # FIX 4: Tech stack — all badges built in one st.markdown call so flex-wrap works.
-        # Previously each badge was a separate st.markdown(), which Streamlit wraps in its
-        # own block-level <div>, breaking the flex row and making them appear vertically.
         tech_stack = ["Python 3.11", "Streamlit", "VADER", "TextBlob",
                       "Plotly", "NLTK", "Pandas", "NumPy"]
         tech_badges = "".join([
