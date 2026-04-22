@@ -25,7 +25,7 @@ html, body, [data-testid="stAppViewContainer"] {
     font-family: 'Poppins', sans-serif;
 }
 
-/* FIX 1: Give the main content layer a stacking context so it sits ABOVE the z-index:0 canvas */
+/* Give main content a stacking context so it sits above the z-index:0 canvas */
 [data-testid="stAppViewContainer"] > .main {
     background: transparent;
     position: relative;
@@ -146,8 +146,14 @@ html, body, [data-testid="stAppViewContainer"] {
 """, unsafe_allow_html=True)
 
 # ── Animated background ────────────────────────────────────────────────────────
-# FIX 2: opacity:0.45 on the canvas keeps it subtle; z-index:0 keeps it behind
-# the app content (which now has z-index:1 via CSS above).
+# The old rotating sphere was centred on the viewport and caused a dense cluster
+# in the middle of the screen.  It has been removed entirely.
+#
+# Replacement: 56 lightweight floating beads seeded on an 8×7 grid with random
+# jitter so they start evenly distributed across the full viewport.  Each bead
+# drifts slowly, wraps at the edges, and pulses gently.  Glow radius is halved
+# (4× instead of 7×) and alpha is capped at 0.32 for a subtle, non-distracting
+# background that never clusters in one spot.
 components.html("""
 <script>
 (function () {
@@ -158,9 +164,8 @@ components.html("""
 
   const canvas = parentDoc.createElement('canvas');
   canvas.id = 'bg3d';
-  /* opacity:0.45 = subtle background; z-index:0 = behind the z-index:1 app layer */
   canvas.style.cssText =
-    'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;pointer-events:none;opacity:0.45;';
+    'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;pointer-events:none;';
   parentDoc.body.appendChild(canvas);
 
   const ctx = canvas.getContext('2d');
@@ -174,126 +179,67 @@ components.html("""
 
   const COLORS = ['#6366F1','#10B981','#F43F5E','#F59E0B','#8B5CF6','#06B6D4'];
 
-  /* ── Sphere points ── */
-  const pts = [];
-  for (let i = 0; i < 130; i++) {
-    const theta = Math.random() * Math.PI * 2;
-    const phi   = Math.acos(2 * Math.random() - 1);
-    const rad   = 90 + Math.random() * 210;
-    pts.push({
-      ox: rad * Math.sin(phi) * Math.cos(theta),
-      oy: rad * Math.sin(phi) * Math.sin(theta),
-      oz: rad * Math.cos(phi),
-      r : Math.random() * 2.8 + 1.0,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)]
-    });
-  }
-
-  /* ── Floating beads ── */
+  /* ── Grid-seeded beads ── */
+  const COLS  = 8;
+  const ROWS  = 7;
   const beads = [];
-  for (let i = 0; i < 28; i++) {
-    beads.push({
-      x    : Math.random() * window.parent.innerWidth,
-      y    : Math.random() * window.parent.innerHeight,
-      r    : Math.random() * 5 + 3,
-      vx   : (Math.random() - 0.5) * 0.45,
-      vy   : (Math.random() - 0.5) * 0.45,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)],
-      phase: Math.random() * Math.PI * 2,
-      speed: Math.random() * 0.025 + 0.012
-    });
+
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col < COLS; col++) {
+      const cellW = window.parent.innerWidth  / COLS;
+      const cellH = window.parent.innerHeight / ROWS;
+      beads.push({
+        x    : cellW * col + cellW * (0.15 + Math.random() * 0.7),
+        y    : cellH * row + cellH * (0.15 + Math.random() * 0.7),
+        r    : Math.random() * 3.5 + 2.0,
+        vx   : (Math.random() - 0.5) * 0.32,
+        vy   : (Math.random() - 0.5) * 0.32,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        phase: Math.random() * Math.PI * 2,
+        speed: Math.random() * 0.016 + 0.007
+      });
+    }
   }
 
-  let ang  = 0;
   let time = 0;
-
-  function project(x, y, z) {
-    const fov = 360, sc = fov / (fov + z + 180);
-    return { sx: canvas.width / 2 + x * sc, sy: canvas.height / 2 + y * sc, sc };
-  }
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ang  += 0.0022;
     time += 0.016;
 
-    const cA = Math.cos(ang),        sA = Math.sin(ang);
-    const cB = Math.cos(ang * 0.37), sB = Math.sin(ang * 0.37);
-
-    const projected = pts.map(p => {
-      const rx     = p.ox * cA + p.oz * sA;
-      const ry_raw = -p.ox * sA + p.oz * cA;
-      const ry     = p.oy * cB - ry_raw * sB;
-      const rz     = p.oy * sB + ry_raw * cB;
-      const pr     = project(rx, ry, rz);
-      return { ...pr, color: p.color, r: p.r, rz };
-    }).sort((a, b) => b.rz - a.rz);
-
-    /* Connection lines */
-    for (let i = 0; i < projected.length; i++) {
-      for (let j = i + 1; j < projected.length; j++) {
-        const dx = projected[i].sx - projected[j].sx;
-        const dy = projected[i].sy - projected[j].sy;
-        const d  = Math.sqrt(dx * dx + dy * dy);
-        if (d < 90) {
-          ctx.beginPath();
-          ctx.moveTo(projected[i].sx, projected[i].sy);
-          ctx.lineTo(projected[j].sx, projected[j].sy);
-          ctx.strokeStyle = 'rgba(99,102,241,' + (0.38 * (1 - d / 90)).toFixed(3) + ')';
-          ctx.lineWidth   = 0.85;
-          ctx.stroke();
-        }
-      }
-    }
-
-    /* Sphere dots */
-    projected.forEach(p => {
-      const size  = Math.max(1.2, p.r * p.sc * 5.5);
-      const alpha = Math.min(1.0, Math.max(0.35, p.sc * 2.0));
-      const hex   = Math.round(alpha * 255).toString(16).padStart(2, '0');
-
-      const g = ctx.createRadialGradient(p.sx, p.sy, 0, p.sx, p.sy, size * 5);
-      g.addColorStop(0, p.color + 'aa');
-      g.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.beginPath();
-      ctx.arc(p.sx, p.sy, size * 5, 0, Math.PI * 2);
-      ctx.fillStyle = g;
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(p.sx, p.sy, size, 0, Math.PI * 2);
-      ctx.fillStyle = p.color + hex;
-      ctx.fill();
-    });
-
-    /* Floating beads */
     beads.forEach(b => {
+      /* gentle drift */
       b.x += b.vx;
       b.y += b.vy;
-      if (b.x < -25)                b.x = canvas.width  + 25;
-      if (b.x > canvas.width  + 25) b.x = -25;
-      if (b.y < -25)                b.y = canvas.height + 25;
-      if (b.y > canvas.height + 25) b.y = -25;
 
-      const pulse = b.r + Math.sin(time * b.speed * 60 + b.phase) * 2.2;
-      const alpha = 0.55 + Math.sin(time * b.speed * 40 + b.phase) * 0.22;
+      /* wrap */
+      if (b.x < -30)                b.x = canvas.width  + 30;
+      if (b.x > canvas.width  + 30) b.x = -30;
+      if (b.y < -30)                b.y = canvas.height + 30;
+      if (b.y > canvas.height + 30) b.y = -30;
+
+      const pulse = b.r + Math.sin(time * b.speed * 55 + b.phase) * 1.4;
+      /* alpha capped at 0.32 — clearly visible but never dominant */
+      const alpha = Math.min(0.18 + Math.sin(time * b.speed * 38 + b.phase) * 0.10, 0.32);
       const hexA  = Math.round(alpha * 255).toString(16).padStart(2, '0');
 
-      const glow = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, pulse * 7);
-      glow.addColorStop(0, b.color + '55');
+      /* outer glow — 4× radius keeps it contained */
+      const glow = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, pulse * 4);
+      glow.addColorStop(0, b.color + '2e');
       glow.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.beginPath();
-      ctx.arc(b.x, b.y, pulse * 7, 0, Math.PI * 2);
+      ctx.arc(b.x, b.y, pulse * 4, 0, Math.PI * 2);
       ctx.fillStyle = glow;
       ctx.fill();
 
+      /* core bead with soft specular highlight */
       const core = ctx.createRadialGradient(
         b.x - pulse * 0.3, b.y - pulse * 0.3, 0,
         b.x, b.y, pulse
       );
-      core.addColorStop(0, '#ffffff' + hexA);
-      core.addColorStop(0.4, b.color + hexA);
-      core.addColorStop(1,   b.color + '99');
+      core.addColorStop(0,   '#ffffff' + hexA);
+      core.addColorStop(0.45, b.color + hexA);
+      core.addColorStop(1,    b.color + '18');
       ctx.beginPath();
       ctx.arc(b.x, b.y, pulse, 0, Math.PI * 2);
       ctx.fillStyle = core;
@@ -308,10 +254,15 @@ components.html("""
 """, height=0, scrolling=False)
 
 # ── Social badge bar ───────────────────────────────────────────────────────────
-# FIX 3: setTimeout(300ms) waits for parent DOM to be ready before injecting.
-# setInterval(2000ms) re-injects every 2 s so badges survive Streamlit re-renders
-# that wipe externally injected DOM nodes. The guard `getElementById` prevents
-# duplicate injections on each interval tick.
+# Root cause of missing badges: Streamlit's own toolbar sits at the top of the
+# viewport and its stacking context buries anything at z-index ≤ 9999.
+#
+# Fix: z-index bumped to 2147483647 (browser maximum int32).
+# top moved to 52px so badges sit just below Streamlit's ~47 px header bar and
+# are never overlapped by it.
+# setTimeout(600ms) lets the parent DOM fully settle before injection.
+# setInterval(1500ms) re-injects after any Streamlit re-render that wipes nodes.
+# The getElementById guard prevents duplicate injections on each interval tick.
 components.html("""
 <script>
 (function () {
@@ -319,34 +270,37 @@ components.html("""
     const parentDoc = window.parent.document;
     if (!parentDoc || !parentDoc.body) return;
 
-    /* Already injected — do nothing */
+    /* Already present — nothing to do */
     if (parentDoc.getElementById('social-badges-bar')) return;
 
     const div = parentDoc.createElement('div');
     div.id = 'social-badges-bar';
     div.style.cssText =
-      'position:fixed;top:11px;left:16px;z-index:9999;display:flex;gap:7px;align-items:center;';
+      'position:fixed;top:52px;left:16px;z-index:2147483647;' +
+      'display:flex;gap:7px;align-items:center;pointer-events:auto;';
+
     div.innerHTML = `
-      <a href="https://github.com/thesouravburman" target="_blank" style="text-decoration:none;">
+      <a href="https://github.com/thesouravburman" target="_blank"
+         style="text-decoration:none;display:inline-block;">
         <img src="https://img.shields.io/badge/GitHub-thesouravburman-181717?style=flat-square&logo=github&logoColor=white"
-             style="height:21px;border-radius:4px;" />
+             style="height:22px;border-radius:4px;display:block;" />
       </a>
-      <a href="https://linkedin.com/in/souravburman" target="_blank" style="text-decoration:none;">
+      <a href="https://linkedin.com/in/souravburman" target="_blank"
+         style="text-decoration:none;display:inline-block;">
         <img src="https://img.shields.io/badge/LinkedIn-Sourav%20Burman-0A66C2?style=flat-square&logo=linkedin&logoColor=white"
-             style="height:21px;border-radius:4px;" />
+             style="height:22px;border-radius:4px;display:block;" />
       </a>
-      <a href="mailto:thesouravburman@gmail.com" style="text-decoration:none;">
+      <a href="mailto:thesouravburman@gmail.com"
+         style="text-decoration:none;display:inline-block;">
         <img src="https://img.shields.io/badge/Email-Contact-EA4335?style=flat-square&logo=gmail&logoColor=white"
-             style="height:21px;border-radius:4px;" />
+             style="height:22px;border-radius:4px;display:block;" />
       </a>
     `;
     parentDoc.body.appendChild(div);
   }
 
-  /* First attempt after a short delay so parent DOM is ready */
-  setTimeout(injectBadges, 300);
-  /* Keep re-checking to survive Streamlit hot-reloads */
-  setInterval(injectBadges, 2000);
+  setTimeout(injectBadges, 600);
+  setInterval(injectBadges, 1500);
 })();
 </script>
 """, height=0, scrolling=False)
@@ -591,7 +545,6 @@ with tab2:
 
             st.markdown("<br>", unsafe_allow_html=True)
 
-            # Donut chart
             donut = go.Figure(go.Pie(
                 labels=["Positive", "Negative", "Neutral"],
                 values=[pos_n, neg_n, neu_n],
@@ -617,7 +570,6 @@ with tab2:
             )
             st.plotly_chart(donut, use_container_width=True)
 
-            # Results table
             st.markdown('<div class="glass-card">', unsafe_allow_html=True)
             st.markdown("""<div style="font-family:'Montserrat',sans-serif;font-size:0.68rem;
                         letter-spacing:0.2em;color:#6366F1;margin-bottom:10px;">
@@ -701,7 +653,6 @@ with tab3:
     st.markdown("<br>", unsafe_allow_html=True)
     ic1, ic2 = st.columns(2)
 
-    # ── Sentiment by category ──────────────────────────────────────────────────
     with ic1:
         cat_sent = insights_df.groupby(["category", "Sentiment"]).size().reset_index(name="count")
         fig_cat  = px.bar(
@@ -723,7 +674,6 @@ with tab3:
         )
         st.plotly_chart(fig_cat, use_container_width=True)
 
-    # ── Score distribution ─────────────────────────────────────────────────────
     with ic2:
         fig_hist = go.Figure()
         for sent, clr in [("POSITIVE","#10B981"), ("NEGATIVE","#F43F5E"), ("NEUTRAL","#F59E0B")]:
@@ -749,7 +699,6 @@ with tab3:
 
     ic3, ic4 = st.columns(2)
 
-    # ── Rating vs sentiment score scatter ──────────────────────────────────────
     with ic3:
         fig_scat = px.scatter(
             insights_df, x="rating", y="Score",
@@ -772,7 +721,6 @@ with tab3:
         )
         st.plotly_chart(fig_scat, use_container_width=True)
 
-    # ── Subjectivity vs confidence ─────────────────────────────────────────────
     with ic4:
         try:
             fig_sub = px.scatter(
@@ -802,7 +750,6 @@ with tab3:
         )
         st.plotly_chart(fig_sub, use_container_width=True)
 
-    # ── Top-words bar charts ───────────────────────────────────────────────────
     pos_texts = insights_df[insights_df["Sentiment"] == "POSITIVE"]["review_text"].tolist()
     neg_texts = insights_df[insights_df["Sentiment"] == "NEGATIVE"]["review_text"].tolist()
     wf_pos    = get_word_frequencies(pos_texts, 12)
