@@ -285,7 +285,7 @@ components.html("""
         <img src="https://img.shields.io/badge/GitHub-thesouravburman-181717?style=flat-square&logo=github&logoColor=white"
              style="height:22px;border-radius:4px;display:block;" />
       </a>
-      <a href="https://linkedin.com/in/souravburman" target="_blank"
+      <a href="https://linkedin.com/in/sourav-burman" target="_blank"
          style="text-decoration:none;display:inline-block;">
         <img src="https://img.shields.io/badge/LinkedIn-Sourav%20Burman-0A66C2?style=flat-square&logo=linkedin&logoColor=white"
              style="height:22px;border-radius:4px;display:block;" />
