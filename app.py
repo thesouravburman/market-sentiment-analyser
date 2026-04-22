@@ -513,8 +513,7 @@ with tab2:
                                 plot_bgcolor="rgba(0,0,0,0)",
                                 showlegend=False,
                                 margin=dict(t=10,b=10,l=10,r=10), height=220,
-                                title=dict(text="SENTIMENT SPLIT",
-                                           font=dict(family="Montserrat",size=12,color="#6366F1")))
+                                title="SENTIMENT SPLIT")
             st.plotly_chart(donut, use_container_width=True)
 
             # Results table
@@ -597,8 +596,7 @@ with tab3:
         fig_cat = px.bar(cat_sent, x="category", y="count", color="Sentiment",
                          color_discrete_map={"POSITIVE":"#10B981","NEGATIVE":"#F43F5E","NEUTRAL":"#F59E0B"},
                          barmode="group",
-                         title=dict(text="SENTIMENT BY PRODUCT CATEGORY",
-                                    font=dict(family="Montserrat",size=13,color="#6366F1")))
+                         title="SENTIMENT BY PRODUCT CATEGORY")
         fig_cat.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                               font=dict(color="#94A3B8",family="Poppins"),
                               legend=dict(bgcolor="rgba(0,0,0,0)",title_text=""),
@@ -617,8 +615,7 @@ with tab3:
         fig_hist.update_layout(barmode="overlay",
                                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                                font=dict(color="#94A3B8",family="Poppins"),
-                               title=dict(text="VADER SCORE DISTRIBUTION",
-                                          font=dict(family="Montserrat",size=13,color="#F59E0B")),
+                               title="VADER SCORE DISTRIBUTION",
                                legend=dict(bgcolor="rgba(0,0,0,0)"),
                                xaxis=dict(gridcolor="#1E293B",title="Compound Score"),
                                yaxis=dict(gridcolor="#1E293B",title="Count"),
@@ -633,8 +630,7 @@ with tab3:
                               color="Sentiment",
                               color_discrete_map={"POSITIVE":"#10B981","NEGATIVE":"#F43F5E","NEUTRAL":"#F59E0B"},
                               size="Confidence (%)",
-                              title=dict(text="STAR RATING vs VADER SCORE",
-                                         font=dict(family="Montserrat",size=13,color="#10B981")),
+                              title="STAR RATING vs VADER SCORE",
                               labels={"rating":"Star Rating","Score":"VADER Score"})
         fig_scat.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                                font=dict(color="#94A3B8",family="Poppins"),
@@ -649,8 +645,7 @@ with tab3:
         fig_sub = px.scatter(insights_df, x="Subjectivity (%)", y="Confidence (%)",
                              color="Sentiment",
                              color_discrete_map={"POSITIVE":"#10B981","NEGATIVE":"#F43F5E","NEUTRAL":"#F59E0B"},
-                             title=dict(text="SUBJECTIVITY vs CONFIDENCE",
-                                        font=dict(family="Montserrat",size=13,color="#8B5CF6")),
+                             title="SUBJECTIVITY vs CONFIDENCE",
                              trendline="ols")
         fig_sub.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                               font=dict(color="#94A3B8",family="Poppins"),
@@ -670,8 +665,7 @@ with tab3:
     with wc1:
         fig_wp = px.bar(wf_pos, x="Frequency", y="Word", orientation="h",
                         color="Frequency", color_continuous_scale=["#064e3b","#10B981","#d1fae5"],
-                        title=dict(text="TOP WORDS — POSITIVE REVIEWS",
-                                   font=dict(family="Montserrat",size=13,color="#10B981")))
+                        title="TOP WORDS — POSITIVE REVIEWS")
         fig_wp.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                              font=dict(color="#94A3B8",family="Poppins"),
                              coloraxis_showscale=False,
@@ -683,8 +677,7 @@ with tab3:
     with wc2:
         fig_wn = px.bar(wf_neg, x="Frequency", y="Word", orientation="h",
                         color="Frequency", color_continuous_scale=["#4c0519","#F43F5E","#fecdd3"],
-                        title=dict(text="TOP WORDS — NEGATIVE REVIEWS",
-                                   font=dict(family="Montserrat",size=13,color="#F43F5E")))
+                        title="TOP WORDS — NEGATIVE REVIEWS")
         fig_wn.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                              font=dict(color="#94A3B8",family="Poppins"),
                              coloraxis_showscale=False,
