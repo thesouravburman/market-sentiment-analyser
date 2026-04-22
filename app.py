@@ -397,7 +397,7 @@ with tab1:
                                 ▲ KEY WORDS</div>""", unsafe_allow_html=True)
                     st.markdown('<div style="display:flex;flex-wrap:wrap;gap:6px;">', unsafe_allow_html=True)
                     for word, freq in r["top_words"][:8]:
-                        st.markdown(f'<span style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:20px;padding:3px 12px;font-size:0.73rem;color:#A5B4FC;">{word} <b style='color:#6366F1;'>{freq}</b></span>', unsafe_allow_html=True)
+                        st.markdown(f'<span style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:20px;padding:3px 12px;font-size:0.73rem;color:#A5B4FC;">{word} <b style="color:#6366F1;">{freq}</b></span>', unsafe_allow_html=True)
                     st.markdown("</div></div>", unsafe_allow_html=True)
 
         elif analyse_btn and not user_text.strip():
