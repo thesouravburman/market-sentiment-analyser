@@ -15,247 +15,7 @@ st.set_page_config(
 )
 
 # ── Fonts + Global CSS ─────────────────────────────────────────────────────────
-st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
-  html, body, [class*="css"] {
-    font-family: 'Poppins', sans-serif;
-    background: #05080F;
-    color: #E2E8F0;
-  }
-  .stApp { background: #05080F; }
-  #MainMenu, footer, header { visibility: hidden; }
-  .block-container { padding-top: 1rem; padding-bottom: 2rem; }
-
-  /* Tabs */
-  .stTabs [data-baseweb="tab-list"] {
-    gap: 4px;
-    background: rgba(99,102,241,0.06);
-    border-radius: 12px;
-    padding: 6px;
-    border: 1px solid rgba(99,102,241,0.18);
-  }
-  .stTabs [data-baseweb="tab"] {
-    background: transparent;
-    border-radius: 8px;
-    color: #94A3B8;
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 600;
-    font-size: 0.78rem;
-    letter-spacing: 0.08em;
-    padding: 8px 22px;
-    border: none;
-  }
-  .stTabs [aria-selected="true"] {
-    background: linear-gradient(135deg, #6366F1, #4F46E5) !important;
-    color: #fff !important;
-  }
-
-  /* Cards */
-  .glass-card {
-    background: rgba(99,102,241,0.05);
-    border: 1px solid rgba(99,102,241,0.2);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 16px;
-    backdrop-filter: blur(12px);
-  }
-  .pos-card {
-    background: rgba(16,185,129,0.06);
-    border: 1px solid rgba(16,185,129,0.25);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 16px;
-  }
-  .neg-card {
-    background: rgba(244,63,94,0.06);
-    border: 1px solid rgba(244,63,94,0.25);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 16px;
-  }
-  .neu-card {
-    background: rgba(245,158,11,0.06);
-    border: 1px solid rgba(245,158,11,0.25);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 16px;
-  }
-
-  /* Metric tiles */
-  .metric-tile {
-    background: rgba(99,102,241,0.08);
-    border: 1px solid rgba(99,102,241,0.25);
-    border-radius: 14px;
-    padding: 20px;
-    text-align: center;
-  }
-  .metric-val {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 2rem;
-    font-weight: 900;
-    background: linear-gradient(135deg, #6366F1, #10B981);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  .metric-lbl {
-    font-size: 0.7rem;
-    color: #64748B;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    font-family: 'Montserrat', sans-serif;
-    margin-top: 4px;
-  }
-
-  /* Sentiment badge */
-  .sent-badge {
-    display: inline-block;
-    padding: 6px 18px;
-    border-radius: 30px;
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 700;
-    font-size: 0.82rem;
-    letter-spacing: 0.14em;
-  }
-
-  /* Input */
-  .stTextArea textarea {
-    background: rgba(99,102,241,0.06) !important;
-    border: 1px solid rgba(99,102,241,0.25) !important;
-    border-radius: 10px !important;
-    color: #E2E8F0 !important;
-    font-family: 'Poppins', sans-serif !important;
-    font-size: 0.88rem !important;
-  }
-  label, .stSelectbox label {
-    font-family: 'Montserrat', sans-serif !important;
-    font-size: 0.75rem !important;
-    letter-spacing: 0.08em !important;
-    color: #94A3B8 !important;
-    text-transform: uppercase !important;
-  }
-
-  /* Buttons */
-  .stButton > button {
-    background: linear-gradient(135deg, #6366F1, #4F46E5);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    padding: 12px 32px;
-    font-size: 0.85rem;
-    width: 100%;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .stButton > button:hover {
-    background: linear-gradient(135deg, #4F46E5, #4338CA);
-    transform: translateY(-1px);
-    box-shadow: 0 8px 24px rgba(99,102,241,0.4);
-  }
-
-  /* Watermarks */
-  .brand-watermark {
-    position: fixed; top: 14px; right: 18px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 0.62rem; letter-spacing: 0.18em;
-    color: rgba(99,102,241,0.28); z-index: 999;
-    pointer-events: none;
-  }
-  .brand-watermark-left {
-    position: fixed; top: 14px; left: 18px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 0.62rem; letter-spacing: 0.18em;
-    color: rgba(99,102,241,0.28); z-index: 999;
-    pointer-events: none;
-  }
-
-  h1,h2,h3 { font-family: 'Montserrat', sans-serif !important; letter-spacing: 0.04em !important; }
-
-  .indigo-divider {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, #6366F1, transparent);
-    margin: 20px 0; border: none;
-  }
-
-  /* Scrollable review list */
-  .review-scroll {
-    max-height: 320px;
-    overflow-y: auto;
-    padding-right: 4px;
-  }
-  .review-item {
-    background: rgba(255,255,255,0.03);
-    border-left: 3px solid;
-    border-radius: 0 8px 8px 0;
-    padding: 10px 14px;
-    margin-bottom: 8px;
-    font-size: 0.82rem;
-    color: #CBD5E1;
-    line-height: 1.5;
-  }
-</style>
-""", unsafe_allow_html=True)
-
-# ── Animated background ────────────────────────────────────────────────────────
-st.markdown("""
-<canvas id="sentCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
-<script>
-(function(){
-  const canvas = document.getElementById('sentCanvas');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d');
-  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-  window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});
-
-  const COLORS = ['#6366F1','#10B981','#F43F5E','#F59E0B','#818CF8'];
-  const N = 60;
-  const pts = Array.from({length:N},()=>({
-    x: Math.random()*canvas.width,
-    y: Math.random()*canvas.height,
-    vx:(Math.random()-0.5)*0.4,
-    vy:(Math.random()-0.5)*0.4,
-    r: Math.random()*2+0.7,
-    c: COLORS[Math.floor(Math.random()*COLORS.length)],
-    a: Math.random()*0.5+0.15
-  }));
-
-  function draw(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    for(let i=0;i<N;i++){
-      for(let j=i+1;j<N;j++){
-        const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y;
-        const d=Math.sqrt(dx*dx+dy*dy);
-        if(d<120){
-          ctx.beginPath();
-          ctx.moveTo(pts[i].x,pts[i].y);
-          ctx.lineTo(pts[j].x,pts[j].y);
-          ctx.strokeStyle=`rgba(99,102,241,${(1-d/120)*0.1})`;
-          ctx.lineWidth=0.6; ctx.stroke();
-        }
-      }
-    }
-    pts.forEach(p=>{
-      ctx.beginPath();
-      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-      ctx.fillStyle=p.c+Math.floor(p.a*255).toString(16).padStart(2,'0');
-      ctx.fill();
-      p.x+=p.vx; p.y+=p.vy;
-      if(p.x<0||p.x>canvas.width) p.vx*=-1;
-      if(p.y<0||p.y>canvas.height) p.vy*=-1;
-    });
-    requestAnimationFrame(draw);
-  }
-  draw();
-})();
-</script>
-""", unsafe_allow_html=True)
-
-# ── Watermarks ─────────────────────────────────────────────────────────────────
-st.markdown('<div class="brand-watermark">⬡ SOURAV BURMAN · CS ENGINEER</div>', unsafe_allow_html=True)
-st.markdown('<div class="brand-watermark-left">⬡ MARKET SENTIMENT ANALYSER v1.0</div>', unsafe_allow_html=True)
+st.markdown('''<div style="position:fixed;top:14px;left:16px;z-index:9999;display:flex;gap:8px;align-items:center;"><a href="https://github.com/thesouravburman" target="_blank" style="text-decoration:none;"><img src="https://img.shields.io/badge/GitHub-thesouravburman-181717?style=flat-square&logo=github&logoColor=white" style="height:22px;border-radius:4px;"/></a><a href="https://linkedin.com/in/sourav-burman" target="_blank" style="text-decoration:none;"><img src="https://img.shields.io/badge/LinkedIn-sourav--burman-0A66C2?style=flat-square&logo=linkedin&logoColor=white" style="height:22px;border-radius:4px;"/></a><a href="mailto:thesouravburman@gmail.com" style="text-decoration:none;"><img src="https://img.shields.io/badge/Email-Gmail-D14836?style=flat-square&logo=gmail&logoColor=white" style="height:22px;border-radius:4px;"/></a></div>''', unsafe_allow_html=True)
 
 # ── Hero header ────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -514,7 +274,7 @@ with tab2:
                                 showlegend=False,
                                 margin=dict(t=10,b=10,l=10,r=10), height=220,
                                 title="SENTIMENT SPLIT")
-            st.plotly_chart(donut, use_container_width=True)
+            st.plotly_chart(donut, width='stretch')
 
             # Results table
             st.markdown('<div class="glass-card">', unsafe_allow_html=True)
@@ -524,12 +284,12 @@ with tab2:
             show_cols = ["Sentiment","Score","Confidence (%)","Positive (%)","Negative (%)","Subjectivity (%)", text_col_input]
             show_cols = [c for c in show_cols if c in result_df.columns]
             st.dataframe(result_df[show_cols].sort_values("Score", ascending=False),
-                         use_container_width=True, height=260)
+                         width='stretch', height=260)
 
             # Download
             csv_out = result_df.to_csv(index=False).encode("utf-8")
             st.download_button("⬇️  DOWNLOAD RESULTS CSV", csv_out,
-                               "sentiment_results.csv", "text/csv", use_container_width=True)
+                               "sentiment_results.csv", "text/csv", width='stretch')
             st.markdown("</div>", unsafe_allow_html=True)
 
         elif batch_df is not None:
@@ -603,7 +363,7 @@ with tab3:
                               xaxis=dict(gridcolor="rgba(0,0,0,0)"),
                               yaxis=dict(gridcolor="#1E293B"),
                               margin=dict(l=10,r=10,t=42,b=10), height=300)
-        st.plotly_chart(fig_cat, use_container_width=True)
+        st.plotly_chart(fig_cat, width='stretch')
 
     # Score distribution
     with ic2:
@@ -620,7 +380,7 @@ with tab3:
                                xaxis=dict(gridcolor="#1E293B",title="Compound Score"),
                                yaxis=dict(gridcolor="#1E293B",title="Count"),
                                margin=dict(l=10,r=10,t=42,b=10), height=300)
-        st.plotly_chart(fig_hist, use_container_width=True)
+        st.plotly_chart(fig_hist, width='stretch')
 
     ic3, ic4 = st.columns(2)
 
@@ -638,7 +398,7 @@ with tab3:
                                xaxis=dict(gridcolor="#1E293B"),
                                yaxis=dict(gridcolor="#1E293B"),
                                margin=dict(l=10,r=10,t=42,b=10), height=300)
-        st.plotly_chart(fig_scat, use_container_width=True)
+        st.plotly_chart(fig_scat, width='stretch')
 
     # Subjectivity vs confidence
     with ic4:
@@ -653,7 +413,7 @@ with tab3:
                               xaxis=dict(gridcolor="#1E293B"),
                               yaxis=dict(gridcolor="#1E293B"),
                               margin=dict(l=10,r=10,t=42,b=10), height=300)
-        st.plotly_chart(fig_sub, use_container_width=True)
+        st.plotly_chart(fig_sub, width='stretch')
 
     # Top words bar chart
     pos_texts = insights_df[insights_df["Sentiment"]=="POSITIVE"]["review_text"].tolist()
@@ -672,7 +432,7 @@ with tab3:
                              yaxis=dict(gridcolor="rgba(0,0,0,0)"),
                              xaxis=dict(gridcolor="#1E293B"),
                              margin=dict(l=10,r=10,t=42,b=10), height=320)
-        st.plotly_chart(fig_wp, use_container_width=True)
+        st.plotly_chart(fig_wp, width='stretch')
 
     with wc2:
         fig_wn = px.bar(wf_neg, x="Frequency", y="Word", orientation="h",
@@ -684,7 +444,7 @@ with tab3:
                              yaxis=dict(gridcolor="rgba(0,0,0,0)"),
                              xaxis=dict(gridcolor="#1E293B"),
                              margin=dict(l=10,r=10,t=42,b=10), height=320)
-        st.plotly_chart(fig_wn, use_container_width=True)
+        st.plotly_chart(fig_wn, width='stretch')
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 4 — ABOUT
