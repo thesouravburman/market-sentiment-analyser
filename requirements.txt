@@ -7,3 +7,4 @@ textblob
 nltk
 matplotlib
 wordcloud
+statsmodels
