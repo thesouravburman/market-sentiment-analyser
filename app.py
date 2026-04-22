@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+import streamlit.components.v1 as components
 from analyzer import analyse_text, analyse_batch, get_sample_reviews, get_word_frequencies
 
 # ── Page config ────────────────────────────────────────────────────────────────
@@ -141,22 +142,32 @@ html, body, [data-testid="stAppViewContainer"] {
 </style>
 """, unsafe_allow_html=True)
 
-# ── Animated background: rotating sphere + floating beads ──────────────────────
-st.markdown('''
-<canvas id="bg3d" style="position:fixed;top:0;left:0;width:100vw;height:100vh;
-                          z-index:0;pointer-events:none;"></canvas>
+# ── FIX 1: Animated background injected via components.html so the script actually runs ──
+# Streamlit strips <script> from st.markdown; components.html() executes inside an iframe
+# that can reach window.parent.document to inject the canvas into the real page.
+components.html("""
 <script>
 (function () {
-  const canvas = document.getElementById('bg3d');
-  if (!canvas) return;
+  const parentDoc = window.parent.document;
+
+  // Remove stale canvas from previous Streamlit hot-reloads
+  const existing = parentDoc.getElementById('bg3d');
+  if (existing) existing.remove();
+
+  const canvas = parentDoc.createElement('canvas');
+  canvas.id = 'bg3d';
+  canvas.style.cssText =
+    'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;pointer-events:none;';
+  parentDoc.body.appendChild(canvas);
+
   const ctx = canvas.getContext('2d');
 
   function resize() {
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width  = window.parent.innerWidth;
+    canvas.height = window.parent.innerHeight;
   }
   resize();
-  window.addEventListener('resize', resize);
+  window.parent.addEventListener('resize', resize);
 
   const COLORS = ['#6366F1','#10B981','#F43F5E','#F59E0B','#8B5CF6','#06B6D4'];
 
@@ -179,8 +190,8 @@ st.markdown('''
   const beads = [];
   for (let i = 0; i < 28; i++) {
     beads.push({
-      x    : Math.random() * window.innerWidth,
-      y    : Math.random() * window.innerHeight,
+      x    : Math.random() * window.parent.innerWidth,
+      y    : Math.random() * window.parent.innerHeight,
       r    : Math.random() * 5 + 3,
       vx   : (Math.random() - 0.5) * 0.45,
       vy   : (Math.random() - 0.5) * 0.45,
@@ -203,10 +214,9 @@ st.markdown('''
     ang  += 0.0022;
     time += 0.016;
 
-    const cA = Math.cos(ang),         sA = Math.sin(ang);
-    const cB = Math.cos(ang * 0.37),  sB = Math.sin(ang * 0.37);
+    const cA = Math.cos(ang),        sA = Math.sin(ang);
+    const cB = Math.cos(ang * 0.37), sB = Math.sin(ang * 0.37);
 
-    /* Project sphere pts */
     const projected = pts.map(p => {
       const rx     = p.ox * cA + p.oz * sA;
       const ry_raw = -p.ox * sA + p.oz * cA;
@@ -257,16 +267,15 @@ st.markdown('''
     beads.forEach(b => {
       b.x += b.vx;
       b.y += b.vy;
-      if (b.x < -25)                  b.x = canvas.width  + 25;
-      if (b.x > canvas.width  + 25)   b.x = -25;
-      if (b.y < -25)                  b.y = canvas.height + 25;
-      if (b.y > canvas.height + 25)   b.y = -25;
+      if (b.x < -25)                b.x = canvas.width  + 25;
+      if (b.x > canvas.width  + 25) b.x = -25;
+      if (b.y < -25)                b.y = canvas.height + 25;
+      if (b.y > canvas.height + 25) b.y = -25;
 
       const pulse = b.r + Math.sin(time * b.speed * 60 + b.phase) * 2.2;
       const alpha = 0.55 + Math.sin(time * b.speed * 40 + b.phase) * 0.22;
       const hexA  = Math.round(alpha * 255).toString(16).padStart(2, '0');
 
-      /* outer glow */
       const glow = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, pulse * 7);
       glow.addColorStop(0, b.color + '55');
       glow.addColorStop(1, 'rgba(0,0,0,0)');
@@ -275,7 +284,6 @@ st.markdown('''
       ctx.fillStyle = glow;
       ctx.fill();
 
-      /* shiny core */
       const core = ctx.createRadialGradient(
         b.x - pulse * 0.3, b.y - pulse * 0.3, 0,
         b.x, b.y, pulse
@@ -294,26 +302,41 @@ st.markdown('''
   draw();
 })();
 </script>
-''', unsafe_allow_html=True)
+""", height=0, scrolling=False)
 
-# ── Badge bar — TOP LEFT ───────────────────────────────────────────────────────
-st.markdown("""
-<div style="position:fixed;top:11px;left:16px;z-index:9999;
-            display:flex;gap:7px;align-items:center;">
-  <a href="https://github.com/thesouravburman" target="_blank" style="text-decoration:none;">
-    <img src="https://img.shields.io/badge/GitHub-thesouravburman-181717?style=flat-square&logo=github&logoColor=white"
-         style="height:21px;border-radius:4px;"/>
-  </a>
-  <a href="https://linkedin.com/in/souravburman" target="_blank" style="text-decoration:none;">
-    <img src="https://img.shields.io/badge/LinkedIn-Sourav%20Burman-0A66C2?style=flat-square&logo=linkedin&logoColor=white"
-         style="height:21px;border-radius:4px;"/>
-  </a>
-  <a href="mailto:thesouravburman@gmail.com" style="text-decoration:none;">
-    <img src="https://img.shields.io/badge/Email-Contact-EA4335?style=flat-square&logo=gmail&logoColor=white"
-         style="height:21px;border-radius:4px;"/>
-  </a>
-</div>
-""", unsafe_allow_html=True)
+# ── FIX 2: Badge bar injected into parent DOM via components.html ──────────────
+# st.markdown with position:fixed gets clipped inside Streamlit's own container;
+# injecting directly into window.parent.document places it on the real viewport.
+components.html("""
+<script>
+(function () {
+  const parentDoc = window.parent.document;
+
+  const existing = parentDoc.getElementById('social-badges-bar');
+  if (existing) existing.remove();
+
+  const div = parentDoc.createElement('div');
+  div.id = 'social-badges-bar';
+  div.style.cssText =
+    'position:fixed;top:11px;left:16px;z-index:9999;display:flex;gap:7px;align-items:center;';
+  div.innerHTML = `
+    <a href="https://github.com/thesouravburman" target="_blank" style="text-decoration:none;">
+      <img src="https://img.shields.io/badge/GitHub-thesouravburman-181717?style=flat-square&logo=github&logoColor=white"
+           style="height:21px;border-radius:4px;"/>
+    </a>
+    <a href="https://linkedin.com/in/souravburman" target="_blank" style="text-decoration:none;">
+      <img src="https://img.shields.io/badge/LinkedIn-Sourav%20Burman-0A66C2?style=flat-square&logo=linkedin&logoColor=white"
+           style="height:21px;border-radius:4px;"/>
+    </a>
+    <a href="mailto:thesouravburman@gmail.com" style="text-decoration:none;">
+      <img src="https://img.shields.io/badge/Email-Contact-EA4335?style=flat-square&logo=gmail&logoColor=white"
+           style="height:21px;border-radius:4px;"/>
+    </a>
+  `;
+  parentDoc.body.appendChild(div);
+})();
+</script>
+""", height=0, scrolling=False)
 
 # ── Hero header ────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -861,6 +884,7 @@ with tab4:
 
     with ab2:
         st.markdown('<div class="neu-card">', unsafe_allow_html=True)
+        # FIX 3: Social links now have proper <a href> tags so they are clickable
         st.markdown("""
         <div style="font-family:'Montserrat',sans-serif;font-size:0.68rem;
                     letter-spacing:0.2em;color:#F59E0B;margin-bottom:16px;">● BUILDER</div>
@@ -872,8 +896,10 @@ with tab4:
             CS ENGINEER · AI/ML · NLP
           </div>
           <div style="margin-top:16px;font-size:0.8rem;color:#94A3B8;line-height:1.9;">
-            🐙 github.com/thesouravburman<br>
-            📧 thesouravburman@gmail.com
+            🐙 <a href="https://github.com/thesouravburman" target="_blank"
+                  style="color:#94A3B8;text-decoration:underline;">github.com/thesouravburman</a><br>
+            📧 <a href="mailto:thesouravburman@gmail.com"
+                  style="color:#94A3B8;text-decoration:underline;">thesouravburman@gmail.com</a>
           </div>
           <div style="margin-top:20px;padding:10px 18px;
                       background:rgba(99,102,241,0.1);border-radius:8px;
@@ -886,20 +912,24 @@ with tab4:
         """, unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown('<div class="glass-card" style="margin-top:0;">', unsafe_allow_html=True)
-        st.markdown("""
-        <div style="font-family:'Montserrat',sans-serif;font-size:0.68rem;
-                    letter-spacing:0.2em;color:#6366F1;margin-bottom:12px;">⚡ TECH STACK</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;">""", unsafe_allow_html=True)
-        for t in ["Python 3.11", "Streamlit", "VADER", "TextBlob",
-                  "Plotly", "NLTK", "Pandas", "NumPy"]:
-            st.markdown(
-                '<span style="background:rgba(99,102,241,0.15);border:1px solid '
-                'rgba(99,102,241,0.3);border-radius:6px;padding:3px 10px;'
-                f'font-size:0.73rem;color:#A5B4FC;">{t}</span>',
-                unsafe_allow_html=True
-            )
-        st.markdown("</div></div>", unsafe_allow_html=True)
+        # FIX 4: Tech stack — all badges built in one st.markdown call so flex-wrap works.
+        # Previously each badge was a separate st.markdown(), which Streamlit wraps in its
+        # own block-level <div>, breaking the flex row and making them appear vertically.
+        tech_stack = ["Python 3.11", "Streamlit", "VADER", "TextBlob",
+                      "Plotly", "NLTK", "Pandas", "NumPy"]
+        tech_badges = "".join([
+            f'<span style="background:rgba(99,102,241,0.15);border:1px solid '
+            f'rgba(99,102,241,0.3);border-radius:6px;padding:3px 10px;'
+            f'font-size:0.73rem;color:#A5B4FC;">{t}</span>'
+            for t in tech_stack
+        ])
+        st.markdown(f"""
+        <div class="glass-card" style="margin-top:0;">
+          <div style="font-family:'Montserrat',sans-serif;font-size:0.68rem;
+                      letter-spacing:0.2em;color:#6366F1;margin-bottom:12px;">⚡ TECH STACK</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">{tech_badges}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ── Footer ─────────────────────────────────────────────────────────────────────
 st.markdown('<div class="indigo-divider"></div>', unsafe_allow_html=True)
