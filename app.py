@@ -13,8 +13,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ── BUG FIX 1: CSS classes were referenced throughout the app but never defined.
-#    Added full stylesheet for glass-card, pos/neg/neu-card, metric tiles, divider.
+# ── Global stylesheet ──────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Poppins:wght@400;600&display=swap');
@@ -93,7 +92,6 @@ html, body, [data-testid="stAppViewContainer"] {
     opacity: 0.4;
 }
 
-/* Style Streamlit native elements to match dark theme */
 [data-testid="stTextArea"] textarea {
     background: rgba(15, 23, 42, 0.9) !important;
     border: 1px solid rgba(99, 102, 241, 0.3) !important;
@@ -143,91 +141,164 @@ html, body, [data-testid="stAppViewContainer"] {
 </style>
 """, unsafe_allow_html=True)
 
-# ── Animated 3-D background ────────────────────────────────────────────────────
-st.markdown('''<canvas id="bg3d" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;pointer-events:none;"></canvas>
+# ── Animated background: rotating sphere + floating beads ──────────────────────
+st.markdown('''
+<canvas id="bg3d" style="position:fixed;top:0;left:0;width:100vw;height:100vh;
+                          z-index:0;pointer-events:none;"></canvas>
 <script>
-(function() {
+(function () {
   const canvas = document.getElementById('bg3d');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
   resize();
   window.addEventListener('resize', resize);
 
   const COLORS = ['#6366F1','#10B981','#F43F5E','#F59E0B','#8B5CF6','#06B6D4'];
+
+  /* ── Sphere points ── */
   const pts = [];
-  for (let i = 0; i < 110; i++) {
+  for (let i = 0; i < 130; i++) {
     const theta = Math.random() * Math.PI * 2;
     const phi   = Math.acos(2 * Math.random() - 1);
-    const rad   = 90 + Math.random() * 200;
+    const rad   = 90 + Math.random() * 210;
     pts.push({
       ox: rad * Math.sin(phi) * Math.cos(theta),
       oy: rad * Math.sin(phi) * Math.sin(theta),
       oz: rad * Math.cos(phi),
-      r:  Math.random() * 2.0 + 0.5,
+      r : Math.random() * 2.8 + 1.0,
       color: COLORS[Math.floor(Math.random() * COLORS.length)]
     });
   }
 
-  let ang = 0;
+  /* ── Floating beads ── */
+  const beads = [];
+  for (let i = 0; i < 28; i++) {
+    beads.push({
+      x    : Math.random() * window.innerWidth,
+      y    : Math.random() * window.innerHeight,
+      r    : Math.random() * 5 + 3,
+      vx   : (Math.random() - 0.5) * 0.45,
+      vy   : (Math.random() - 0.5) * 0.45,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      phase: Math.random() * Math.PI * 2,
+      speed: Math.random() * 0.025 + 0.012
+    });
+  }
+
+  let ang  = 0;
+  let time = 0;
+
   function project(x, y, z) {
     const fov = 360, sc = fov / (fov + z + 180);
-    return { sx: canvas.width/2 + x*sc, sy: canvas.height/2 + y*sc, sc };
+    return { sx: canvas.width / 2 + x * sc, sy: canvas.height / 2 + y * sc, sc };
   }
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ang += 0.0022;
-    const cA = Math.cos(ang), sA = Math.sin(ang);
-    const cB = Math.cos(ang * 0.37), sB = Math.sin(ang * 0.37);
+    ang  += 0.0022;
+    time += 0.016;
 
+    const cA = Math.cos(ang),         sA = Math.sin(ang);
+    const cB = Math.cos(ang * 0.37),  sB = Math.sin(ang * 0.37);
+
+    /* Project sphere pts */
     const projected = pts.map(p => {
-      const rx = p.ox*cA + p.oz*sA;
-      const ry_raw = -p.ox*sA + p.oz*cA;
-      const ry = p.oy*cB - ry_raw*sB;
-      const rz = p.oy*sB + ry_raw*cB;
-      const pr = project(rx, ry, rz);
+      const rx     = p.ox * cA + p.oz * sA;
+      const ry_raw = -p.ox * sA + p.oz * cA;
+      const ry     = p.oy * cB - ry_raw * sB;
+      const rz     = p.oy * sB + ry_raw * cB;
+      const pr     = project(rx, ry, rz);
       return { ...pr, color: p.color, r: p.r, rz };
     }).sort((a, b) => b.rz - a.rz);
 
+    /* Connection lines */
     for (let i = 0; i < projected.length; i++) {
-      for (let j = i+1; j < projected.length; j++) {
+      for (let j = i + 1; j < projected.length; j++) {
         const dx = projected[i].sx - projected[j].sx;
         const dy = projected[i].sy - projected[j].sy;
-        const d  = Math.sqrt(dx*dx + dy*dy);
-        if (d < 88) {
+        const d  = Math.sqrt(dx * dx + dy * dy);
+        if (d < 90) {
           ctx.beginPath();
           ctx.moveTo(projected[i].sx, projected[i].sy);
           ctx.lineTo(projected[j].sx, projected[j].sy);
-          ctx.strokeStyle = 'rgba(99,102,241,' + (0.13*(1-d/88)).toFixed(3) + ')';
-          ctx.lineWidth = 0.5;
+          ctx.strokeStyle = 'rgba(99,102,241,' + (0.38 * (1 - d / 90)).toFixed(3) + ')';
+          ctx.lineWidth   = 0.85;
           ctx.stroke();
         }
       }
     }
 
+    /* Sphere dots */
     projected.forEach(p => {
-      const size  = Math.max(0.5, p.r * p.sc * 4);
-      const alpha = Math.min(0.9, Math.max(0.1, p.sc * 1.3));
+      const size  = Math.max(1.2, p.r * p.sc * 5.5);
+      const alpha = Math.min(1.0, Math.max(0.35, p.sc * 2.0));
       const hex   = Math.round(alpha * 255).toString(16).padStart(2, '0');
-      const g = ctx.createRadialGradient(p.sx, p.sy, 0, p.sx, p.sy, size*4.5);
-      g.addColorStop(0, p.color + '55');
+
+      const g = ctx.createRadialGradient(p.sx, p.sy, 0, p.sx, p.sy, size * 5);
+      g.addColorStop(0, p.color + 'aa');
       g.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.beginPath(); ctx.arc(p.sx, p.sy, size*4.5, 0, Math.PI*2);
-      ctx.fillStyle = g; ctx.fill();
-      ctx.beginPath(); ctx.arc(p.sx, p.sy, size, 0, Math.PI*2);
-      ctx.fillStyle = p.color + hex; ctx.fill();
+      ctx.beginPath();
+      ctx.arc(p.sx, p.sy, size * 5, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(p.sx, p.sy, size, 0, Math.PI * 2);
+      ctx.fillStyle = p.color + hex;
+      ctx.fill();
+    });
+
+    /* Floating beads */
+    beads.forEach(b => {
+      b.x += b.vx;
+      b.y += b.vy;
+      if (b.x < -25)                  b.x = canvas.width  + 25;
+      if (b.x > canvas.width  + 25)   b.x = -25;
+      if (b.y < -25)                  b.y = canvas.height + 25;
+      if (b.y > canvas.height + 25)   b.y = -25;
+
+      const pulse = b.r + Math.sin(time * b.speed * 60 + b.phase) * 2.2;
+      const alpha = 0.55 + Math.sin(time * b.speed * 40 + b.phase) * 0.22;
+      const hexA  = Math.round(alpha * 255).toString(16).padStart(2, '0');
+
+      /* outer glow */
+      const glow = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, pulse * 7);
+      glow.addColorStop(0, b.color + '55');
+      glow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, pulse * 7, 0, Math.PI * 2);
+      ctx.fillStyle = glow;
+      ctx.fill();
+
+      /* shiny core */
+      const core = ctx.createRadialGradient(
+        b.x - pulse * 0.3, b.y - pulse * 0.3, 0,
+        b.x, b.y, pulse
+      );
+      core.addColorStop(0, '#ffffff' + hexA);
+      core.addColorStop(0.4, b.color + hexA);
+      core.addColorStop(1,   b.color + '99');
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, pulse, 0, Math.PI * 2);
+      ctx.fillStyle = core;
+      ctx.fill();
     });
 
     requestAnimationFrame(draw);
   }
   draw();
 })();
-</script>''', unsafe_allow_html=True)
+</script>
+''', unsafe_allow_html=True)
 
-# ── Top badge bar ─────────────────────────────────────────────────────────────
+# ── Badge bar — TOP LEFT ───────────────────────────────────────────────────────
 st.markdown("""
-<div style="position:fixed;top:11px;right:16px;z-index:9999;
+<div style="position:fixed;top:11px;left:16px;z-index:9999;
             display:flex;gap:7px;align-items:center;">
   <a href="https://github.com/thesouravburman" target="_blank" style="text-decoration:none;">
     <img src="https://img.shields.io/badge/GitHub-thesouravburman-181717?style=flat-square&logo=github&logoColor=white"
@@ -265,8 +336,9 @@ st.markdown("""
 
 st.markdown('<div class="indigo-divider"></div>', unsafe_allow_html=True)
 
-# ── Tabs ────────────────────────────────────────────────────────────────────────
+# ── Tabs ───────────────────────────────────────────────────────────────────────
 tab1, tab2, tab3, tab4 = st.tabs(["🧠  ANALYSE TEXT", "📂  BATCH ANALYSIS", "📊  INSIGHTS", "ℹ️  ABOUT"])
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 1 — ANALYSE TEXT
@@ -281,10 +353,6 @@ with tab1:
                     letter-spacing:0.2em;color:#6366F1;margin-bottom:14px;">
                     ● TEXT INPUT</div>""", unsafe_allow_html=True)
 
-        # BUG FIX 2: Quick-sample buttons set session_state["sample"] but the
-        # text_area was never wired to read it as its `value`, so the sample text
-        # never appeared in the box.  Fix: pass value= from session_state so
-        # Streamlit pre-fills the widget on rerun.
         qc1, qc2, qc3 = st.columns(3)
         with qc1:
             if st.button("😊 Positive"):
@@ -314,7 +382,6 @@ with tab1:
         analyse_btn = st.button("🧠  ANALYSE SENTIMENT")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # How it works
         st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         st.markdown("""
         <div style="font-family:'Montserrat',sans-serif;font-size:0.68rem;
@@ -333,11 +400,10 @@ with tab1:
         if analyse_btn and user_text.strip():
             r = analyse_text(user_text)
             if r:
-                color_map = {"POSITIVE":"#10B981","NEGATIVE":"#F43F5E","NEUTRAL":"#F59E0B"}
-                card_map  = {"POSITIVE":"pos-card","NEGATIVE":"neg-card","NEUTRAL":"neu-card"}
+                color_map = {"POSITIVE": "#10B981", "NEGATIVE": "#F43F5E", "NEUTRAL": "#F59E0B"}
+                card_map  = {"POSITIVE": "pos-card", "NEGATIVE": "neg-card", "NEUTRAL": "neu-card"}
                 clr = color_map[r["label"]]
 
-                # Main result badge
                 st.markdown(f"""
                 <div class="{card_map[r["label"]]}" style="text-align:center;padding:28px 20px;">
                   <div style="font-size:3.5rem;margin-bottom:8px;">{r["emoji"]}</div>
@@ -354,18 +420,17 @@ with tab1:
                   </div>
                 </div>""", unsafe_allow_html=True)
 
-                # Score breakdown bars
                 st.markdown('<div class="glass-card">', unsafe_allow_html=True)
                 st.markdown("""<div style="font-family:'Montserrat',sans-serif;font-size:0.68rem;
                             letter-spacing:0.2em;color:#6366F1;margin-bottom:14px;">
                             ▲ SCORE BREAKDOWN</div>""", unsafe_allow_html=True)
 
                 for label, val, bar_color in [
-                    ("Positive",    r["positive"],    "#10B981"),
-                    ("Negative",    r["negative"],    "#F43F5E"),
-                    ("Neutral",     r["neutral"],     "#F59E0B"),
-                    ("Confidence",  r["confidence"],  "#6366F1"),
-                    ("Subjectivity",r["subjectivity"],"#8B5CF6"),
+                    ("Positive",     r["positive"],    "#10B981"),
+                    ("Negative",     r["negative"],    "#F43F5E"),
+                    ("Neutral",      r["neutral"],     "#F59E0B"),
+                    ("Confidence",   r["confidence"],  "#6366F1"),
+                    ("Subjectivity", r["subjectivity"],"#8B5CF6"),
                 ]:
                     st.markdown(f"""
                     <div style="margin-bottom:10px;">
@@ -381,9 +446,6 @@ with tab1:
                     </div>""", unsafe_allow_html=True)
                 st.markdown("</div>", unsafe_allow_html=True)
 
-                # BUG FIX 3: f-string had single-quoted style attribute inside a
-                # single-quoted f-string → SyntaxError.  Changed inner attribute
-                # quotes to double quotes.
                 if r["top_words"]:
                     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
                     st.markdown("""<div style="font-family:'Montserrat',sans-serif;font-size:0.68rem;
@@ -417,6 +479,7 @@ with tab1:
               </div>
             </div>""", unsafe_allow_html=True)
 
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 2 — BATCH ANALYSIS
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -430,17 +493,15 @@ with tab2:
                     letter-spacing:0.2em;color:#6366F1;margin-bottom:14px;">
                     📂 UPLOAD CSV</div>""", unsafe_allow_html=True)
         st.markdown("""<div style="font-size:0.78rem;color:#64748B;margin-bottom:12px;">
-                    CSV must have a text column containing reviews. Optional columns: category, rating.</div>""",
-                    unsafe_allow_html=True)
+                    CSV must have a text column containing reviews.
+                    Optional columns: category, rating.</div>""", unsafe_allow_html=True)
 
         uploaded = st.file_uploader("Upload CSV", type=["csv"], label_visibility="collapsed")
         text_col_input = st.text_input("Text column name", value="review_text",
                                        help="Column containing the review text")
-
         use_sample = st.button("📋  USE SAMPLE DATASET (40 reviews)")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # Format guide
         st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         st.markdown("""
         <div style="font-family:'Montserrat',sans-serif;font-size:0.68rem;
@@ -455,14 +516,13 @@ with tab2:
         st.markdown("</div>", unsafe_allow_html=True)
 
     with bc2:
-        batch_df = None
+        batch_df  = None
         result_df = None
 
         if use_sample:
-            batch_df = get_sample_reviews()
+            batch_df       = get_sample_reviews()
             text_col_input = "review_text"
             st.success("✅ Sample dataset loaded — 40 product reviews")
-
         elif uploaded:
             try:
                 batch_df = pd.read_csv(uploaded)
@@ -474,19 +534,18 @@ with tab2:
             with st.spinner("🧠 Analysing sentiment..."):
                 result_df = analyse_batch(batch_df, text_col_input)
 
-            # Summary KPIs
-            total = len(result_df)
-            pos_n = (result_df["Sentiment"]=="POSITIVE").sum()
-            neg_n = (result_df["Sentiment"]=="NEGATIVE").sum()
-            neu_n = (result_df["Sentiment"]=="NEUTRAL").sum()
+            total     = len(result_df)
+            pos_n     = (result_df["Sentiment"] == "POSITIVE").sum()
+            neg_n     = (result_df["Sentiment"] == "NEGATIVE").sum()
+            neu_n     = (result_df["Sentiment"] == "NEUTRAL").sum()
             avg_score = result_df["Score"].mean()
 
             k1, k2, k3, k4 = st.columns(4)
             for col, val, lbl in [
-                (k1, total,                     "TOTAL REVIEWS"),
-                (k2, f"{pos_n/total*100:.0f}%", "POSITIVE"),
-                (k3, f"{neg_n/total*100:.0f}%", "NEGATIVE"),
-                (k4, f"{avg_score:+.3f}",        "AVG SCORE"),
+                (k1, total,                      "TOTAL REVIEWS"),
+                (k2, f"{pos_n/total*100:.0f}%",  "POSITIVE"),
+                (k3, f"{neg_n/total*100:.0f}%",  "NEGATIVE"),
+                (k4, f"{avg_score:+.3f}",         "AVG SCORE"),
             ]:
                 with col:
                     st.markdown(f"""<div class="metric-tile">
@@ -498,13 +557,13 @@ with tab2:
 
             # Donut chart
             donut = go.Figure(go.Pie(
-                labels=["Positive","Negative","Neutral"],
+                labels=["Positive", "Negative", "Neutral"],
                 values=[pos_n, neg_n, neu_n],
                 hole=0.62,
-                marker=dict(colors=["#10B981","#F43F5E","#F59E0B"],
+                marker=dict(colors=["#10B981", "#F43F5E", "#F59E0B"],
                             line=dict(color="#05080F", width=2)),
                 textinfo="label+percent",
-                textfont=dict(family="Montserrat",size=11,color="#E2E8F0")
+                textfont=dict(family="Montserrat", size=11, color="#E2E8F0")
             ))
             donut.add_annotation(
                 text=f"<b>{total}</b><br><span style='font-size:9'>REVIEWS</span>",
@@ -515,14 +574,11 @@ with tab2:
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
                 showlegend=False,
-                margin=dict(t=10,b=10,l=10,r=10), height=220,
-                title=dict(text="SENTIMENT SPLIT",
-                           font=dict(family="Montserrat",size=12,color="#6366F1"))
+                margin=dict(t=34, b=10, l=10, r=10),
+                height=220,
+                title="SENTIMENT SPLIT",
+                title_font=dict(family="Montserrat", size=12, color="#6366F1")
             )
-            # BUG FIX 4: `width='stretch'` is not a valid Streamlit parameter for
-            # st.plotly_chart / st.dataframe / st.download_button.
-            # Replaced every occurrence with use_container_width=True (or removed
-            # for download_button which doesn't support it).
             st.plotly_chart(donut, use_container_width=True)
 
             # Results table
@@ -530,7 +586,10 @@ with tab2:
             st.markdown("""<div style="font-family:'Montserrat',sans-serif;font-size:0.68rem;
                         letter-spacing:0.2em;color:#6366F1;margin-bottom:10px;">
                         📋 RESULTS TABLE</div>""", unsafe_allow_html=True)
-            show_cols = ["Sentiment","Score","Confidence (%)","Positive (%)","Negative (%)","Subjectivity (%)", text_col_input]
+            show_cols = [
+                "Sentiment", "Score", "Confidence (%)",
+                "Positive (%)", "Negative (%)", "Subjectivity (%)", text_col_input
+            ]
             show_cols = [c for c in show_cols if c in result_df.columns]
             st.dataframe(
                 result_df[show_cols].sort_values("Score", ascending=False),
@@ -538,7 +597,6 @@ with tab2:
                 height=260
             )
 
-            # Download
             csv_out = result_df.to_csv(index=False).encode("utf-8")
             st.download_button(
                 "⬇️  DOWNLOAD RESULTS CSV",
@@ -565,38 +623,38 @@ with tab2:
               </div>
             </div>""", unsafe_allow_html=True)
 
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 3 — INSIGHTS
 # ═══════════════════════════════════════════════════════════════════════════════
 with tab3:
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown("""<div style="font-family:'Montserrat',sans-serif;font-size:0.68rem;
+    st.markdown("""
+    <div style="font-family:'Montserrat',sans-serif;font-size:0.68rem;
                 letter-spacing:0.2em;color:#6366F1;margin-bottom:4px;">
                 ● INSIGHTS ARE GENERATED FROM THE SAMPLE DATASET</div>
-                <div style="font-size:0.78rem;color:#475569;">
-                Load the sample dataset in Batch Analysis tab to explore live insights from your own CSV.</div>""",
-                unsafe_allow_html=True)
+    <div style="font-size:0.78rem;color:#475569;">
+      Load the sample dataset in Batch Analysis tab to explore live insights from your own CSV.
+    </div>""", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Always compute from sample
-    sample_df = get_sample_reviews()
+    sample_df   = get_sample_reviews()
     insights_df = analyse_batch(sample_df, "review_text")
 
-    # KPI row
     total_i = len(insights_df)
-    pos_i   = (insights_df["Sentiment"]=="POSITIVE").sum()
-    neg_i   = (insights_df["Sentiment"]=="NEGATIVE").sum()
+    pos_i   = (insights_df["Sentiment"] == "POSITIVE").sum()
+    neg_i   = (insights_df["Sentiment"] == "NEGATIVE").sum()
     avg_i   = insights_df["Score"].mean()
     avg_sub = insights_df["Subjectivity (%)"].mean()
 
     i1, i2, i3, i4, i5 = st.columns(5)
     for col, val, lbl in [
-        (i1, total_i,                       "REVIEWS"),
-        (i2, f"{pos_i/total_i*100:.0f}%",   "POSITIVE"),
-        (i3, f"{neg_i/total_i*100:.0f}%",   "NEGATIVE"),
-        (i4, f"{avg_i:+.3f}",               "AVG VADER"),
-        (i5, f"{avg_sub:.1f}%",             "AVG SUBJECTIVITY"),
+        (i1, total_i,                      "REVIEWS"),
+        (i2, f"{pos_i/total_i*100:.0f}%",  "POSITIVE"),
+        (i3, f"{neg_i/total_i*100:.0f}%",  "NEGATIVE"),
+        (i4, f"{avg_i:+.3f}",              "AVG VADER"),
+        (i5, f"{avg_sub:.1f}%",            "AVG SUBJECTIVITY"),
     ]:
         with col:
             st.markdown(f"""<div class="metric-tile">
@@ -607,124 +665,131 @@ with tab3:
     st.markdown("<br>", unsafe_allow_html=True)
     ic1, ic2 = st.columns(2)
 
-    # Sentiment by category
+    # ── Sentiment by category ──────────────────────────────────────────────────
     with ic1:
-        cat_sent = insights_df.groupby(["category","Sentiment"]).size().reset_index(name="count")
-        fig_cat = px.bar(
+        cat_sent = insights_df.groupby(["category", "Sentiment"]).size().reset_index(name="count")
+        fig_cat  = px.bar(
             cat_sent, x="category", y="count", color="Sentiment",
-            color_discrete_map={"POSITIVE":"#10B981","NEGATIVE":"#F43F5E","NEUTRAL":"#F59E0B"},
+            color_discrete_map={"POSITIVE": "#10B981", "NEGATIVE": "#F43F5E", "NEUTRAL": "#F59E0B"},
             barmode="group",
-            title=dict(text="SENTIMENT BY PRODUCT CATEGORY",
-                       font=dict(family="Montserrat",size=13,color="#6366F1"))
+            title="SENTIMENT BY PRODUCT CATEGORY"
         )
         fig_cat.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#94A3B8",family="Poppins"),
-            legend=dict(bgcolor="rgba(0,0,0,0)",title_text=""),
+            title_font=dict(family="Montserrat", size=13, color="#6366F1"),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#94A3B8", family="Poppins"),
+            legend=dict(bgcolor="rgba(0,0,0,0)", title_text=""),
             xaxis=dict(gridcolor="rgba(0,0,0,0)"),
             yaxis=dict(gridcolor="#1E293B"),
-            margin=dict(l=10,r=10,t=42,b=10), height=300
+            margin=dict(l=10, r=10, t=42, b=10),
+            height=300
         )
         st.plotly_chart(fig_cat, use_container_width=True)
 
-    # Score distribution
+    # ── Score distribution ─────────────────────────────────────────────────────
     with ic2:
         fig_hist = go.Figure()
-        for sent, clr in [("POSITIVE","#10B981"),("NEGATIVE","#F43F5E"),("NEUTRAL","#F59E0B")]:
-            sub = insights_df[insights_df["Sentiment"]==sent]["Score"]
-            fig_hist.add_trace(go.Histogram(x=sub, name=sent, marker_color=clr,
-                                            opacity=0.75, xbins=dict(size=0.1)))
+        for sent, clr in [("POSITIVE","#10B981"), ("NEGATIVE","#F43F5E"), ("NEUTRAL","#F59E0B")]:
+            sub = insights_df[insights_df["Sentiment"] == sent]["Score"]
+            fig_hist.add_trace(go.Histogram(
+                x=sub, name=sent, marker_color=clr,
+                opacity=0.75, xbins=dict(size=0.1)
+            ))
         fig_hist.update_layout(
             barmode="overlay",
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#94A3B8",family="Poppins"),
-            title=dict(text="VADER SCORE DISTRIBUTION",
-                       font=dict(family="Montserrat",size=13,color="#F59E0B")),
+            title="VADER SCORE DISTRIBUTION",
+            title_font=dict(family="Montserrat", size=13, color="#F59E0B"),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#94A3B8", family="Poppins"),
             legend=dict(bgcolor="rgba(0,0,0,0)"),
-            xaxis=dict(gridcolor="#1E293B",title="Compound Score"),
-            yaxis=dict(gridcolor="#1E293B",title="Count"),
-            margin=dict(l=10,r=10,t=42,b=10), height=300
+            xaxis=dict(gridcolor="#1E293B", title="Compound Score"),
+            yaxis=dict(gridcolor="#1E293B", title="Count"),
+            margin=dict(l=10, r=10, t=42, b=10),
+            height=300
         )
         st.plotly_chart(fig_hist, use_container_width=True)
 
     ic3, ic4 = st.columns(2)
 
-    # Rating vs sentiment score scatter
+    # ── Rating vs sentiment score scatter ──────────────────────────────────────
     with ic3:
         fig_scat = px.scatter(
             insights_df, x="rating", y="Score",
             color="Sentiment",
-            color_discrete_map={"POSITIVE":"#10B981","NEGATIVE":"#F43F5E","NEUTRAL":"#F59E0B"},
+            color_discrete_map={"POSITIVE": "#10B981", "NEGATIVE": "#F43F5E", "NEUTRAL": "#F59E0B"},
             size="Confidence (%)",
-            title=dict(text="STAR RATING vs VADER SCORE",
-                       font=dict(family="Montserrat",size=13,color="#10B981")),
-            labels={"rating":"Star Rating","Score":"VADER Score"}
+            title="STAR RATING vs VADER SCORE",
+            labels={"rating": "Star Rating", "Score": "VADER Score"}
         )
         fig_scat.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#94A3B8",family="Poppins"),
-            legend=dict(bgcolor="rgba(0,0,0,0)",title_text=""),
+            title_font=dict(family="Montserrat", size=13, color="#10B981"),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#94A3B8", family="Poppins"),
+            legend=dict(bgcolor="rgba(0,0,0,0)", title_text=""),
             xaxis=dict(gridcolor="#1E293B"),
             yaxis=dict(gridcolor="#1E293B"),
-            margin=dict(l=10,r=10,t=42,b=10), height=300
+            margin=dict(l=10, r=10, t=42, b=10),
+            height=300
         )
         st.plotly_chart(fig_scat, use_container_width=True)
 
-    # Subjectivity vs confidence
+    # ── Subjectivity vs confidence ─────────────────────────────────────────────
     with ic4:
-        # BUG FIX 5: trendline="ols" requires statsmodels. It is in requirements.txt
-        # but can crash on cold Streamlit Cloud starts before the package is cached.
-        # Wrapped in try/except so the chart still renders without the trendline if
-        # statsmodels is unavailable.
         try:
             fig_sub = px.scatter(
                 insights_df, x="Subjectivity (%)", y="Confidence (%)",
                 color="Sentiment",
-                color_discrete_map={"POSITIVE":"#10B981","NEGATIVE":"#F43F5E","NEUTRAL":"#F59E0B"},
-                title=dict(text="SUBJECTIVITY vs CONFIDENCE",
-                           font=dict(family="Montserrat",size=13,color="#8B5CF6")),
+                color_discrete_map={"POSITIVE": "#10B981", "NEGATIVE": "#F43F5E", "NEUTRAL": "#F59E0B"},
+                title="SUBJECTIVITY vs CONFIDENCE",
                 trendline="ols"
             )
         except Exception:
             fig_sub = px.scatter(
                 insights_df, x="Subjectivity (%)", y="Confidence (%)",
                 color="Sentiment",
-                color_discrete_map={"POSITIVE":"#10B981","NEGATIVE":"#F43F5E","NEUTRAL":"#F59E0B"},
-                title=dict(text="SUBJECTIVITY vs CONFIDENCE",
-                           font=dict(family="Montserrat",size=13,color="#8B5CF6"))
+                color_discrete_map={"POSITIVE": "#10B981", "NEGATIVE": "#F43F5E", "NEUTRAL": "#F59E0B"},
+                title="SUBJECTIVITY vs CONFIDENCE"
             )
         fig_sub.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#94A3B8",family="Poppins"),
-            legend=dict(bgcolor="rgba(0,0,0,0)",title_text=""),
+            title_font=dict(family="Montserrat", size=13, color="#8B5CF6"),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#94A3B8", family="Poppins"),
+            legend=dict(bgcolor="rgba(0,0,0,0)", title_text=""),
             xaxis=dict(gridcolor="#1E293B"),
             yaxis=dict(gridcolor="#1E293B"),
-            margin=dict(l=10,r=10,t=42,b=10), height=300
+            margin=dict(l=10, r=10, t=42, b=10),
+            height=300
         )
         st.plotly_chart(fig_sub, use_container_width=True)
 
-    # Top words bar charts
-    pos_texts = insights_df[insights_df["Sentiment"]=="POSITIVE"]["review_text"].tolist()
-    neg_texts = insights_df[insights_df["Sentiment"]=="NEGATIVE"]["review_text"].tolist()
-    wf_pos = get_word_frequencies(pos_texts, 12)
-    wf_neg = get_word_frequencies(neg_texts, 12)
+    # ── Top-words bar charts ───────────────────────────────────────────────────
+    pos_texts = insights_df[insights_df["Sentiment"] == "POSITIVE"]["review_text"].tolist()
+    neg_texts = insights_df[insights_df["Sentiment"] == "NEGATIVE"]["review_text"].tolist()
+    wf_pos    = get_word_frequencies(pos_texts, 12)
+    wf_neg    = get_word_frequencies(neg_texts, 12)
 
     wc1, wc2 = st.columns(2)
     with wc1:
         fig_wp = px.bar(
             wf_pos, x="Frequency", y="Word", orientation="h",
             color="Frequency",
-            color_continuous_scale=["#064e3b","#10B981","#d1fae5"],
-            title=dict(text="TOP WORDS — POSITIVE REVIEWS",
-                       font=dict(family="Montserrat",size=13,color="#10B981"))
+            color_continuous_scale=["#064e3b", "#10B981", "#d1fae5"],
+            title="TOP WORDS — POSITIVE REVIEWS"
         )
         fig_wp.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#94A3B8",family="Poppins"),
+            title_font=dict(family="Montserrat", size=13, color="#10B981"),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#94A3B8", family="Poppins"),
             coloraxis_showscale=False,
             yaxis=dict(gridcolor="rgba(0,0,0,0)"),
             xaxis=dict(gridcolor="#1E293B"),
-            margin=dict(l=10,r=10,t=42,b=10), height=320
+            margin=dict(l=10, r=10, t=42, b=10),
+            height=320
         )
         st.plotly_chart(fig_wp, use_container_width=True)
 
@@ -732,19 +797,22 @@ with tab3:
         fig_wn = px.bar(
             wf_neg, x="Frequency", y="Word", orientation="h",
             color="Frequency",
-            color_continuous_scale=["#4c0519","#F43F5E","#fecdd3"],
-            title=dict(text="TOP WORDS — NEGATIVE REVIEWS",
-                       font=dict(family="Montserrat",size=13,color="#F43F5E"))
+            color_continuous_scale=["#4c0519", "#F43F5E", "#fecdd3"],
+            title="TOP WORDS — NEGATIVE REVIEWS"
         )
         fig_wn.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#94A3B8",family="Poppins"),
+            title_font=dict(family="Montserrat", size=13, color="#F43F5E"),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#94A3B8", family="Poppins"),
             coloraxis_showscale=False,
             yaxis=dict(gridcolor="rgba(0,0,0,0)"),
             xaxis=dict(gridcolor="#1E293B"),
-            margin=dict(l=10,r=10,t=42,b=10), height=320
+            margin=dict(l=10, r=10, t=42, b=10),
+            height=320
         )
         st.plotly_chart(fig_wn, use_container_width=True)
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 4 — ABOUT
@@ -776,7 +844,8 @@ with tab4:
         <div style="margin-top:20px;">
           <div style="font-family:'Montserrat',sans-serif;font-size:0.68rem;
                       letter-spacing:0.2em;color:#10B981;margin-bottom:10px;">▲ KEY FEATURES</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.82rem;color:#CBD5E1;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;
+                      font-size:0.82rem;color:#CBD5E1;">
             <div>🧠 Real-time sentiment scoring</div>
             <div>📂 Batch CSV processing</div>
             <div>📊 Polarity score breakdown</div>
@@ -822,9 +891,8 @@ with tab4:
         <div style="font-family:'Montserrat',sans-serif;font-size:0.68rem;
                     letter-spacing:0.2em;color:#6366F1;margin-bottom:12px;">⚡ TECH STACK</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;">""", unsafe_allow_html=True)
-        for t in ["Python 3.11","Streamlit","VADER","TextBlob","Plotly","NLTK","Pandas","NumPy"]:
-            # BUG FIX 6 (same class as Fix 3): f-string had single quotes clashing
-            # with the outer string delimiter.  Switched to a plain string concat.
+        for t in ["Python 3.11", "Streamlit", "VADER", "TextBlob",
+                  "Plotly", "NLTK", "Pandas", "NumPy"]:
             st.markdown(
                 '<span style="background:rgba(99,102,241,0.15);border:1px solid '
                 'rgba(99,102,241,0.3);border-radius:6px;padding:3px 10px;'
@@ -833,7 +901,7 @@ with tab4:
             )
         st.markdown("</div></div>", unsafe_allow_html=True)
 
-# ── Footer ──────────────────────────────────────────────────────────────────────
+# ── Footer ─────────────────────────────────────────────────────────────────────
 st.markdown('<div class="indigo-divider"></div>', unsafe_allow_html=True)
 st.markdown("""
 <div style="text-align:center;padding:12px 0 4px;font-family:'Montserrat',sans-serif;
